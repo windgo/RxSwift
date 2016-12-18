@@ -20,16 +20,18 @@ public class ReplaySubject<Element>
     
     /// Indicates whether the subject has any observers
     public var hasObservers: Bool {
-        _lock.lock(); defer { _lock.unlock() }
-        return _observers.count > 0
+        lock(_lock)
+        let value = _observers.count > 0
+        unlock(_lock)
+        return value
     }
     
-    fileprivate var _lock = NSRecursiveLock()
+    fileprivate var _lock = createLock()
     
     // state
     fileprivate var _isDisposed = false
     fileprivate var _stoppedEvent = nil as Event<Element>?
-    fileprivate var _observers = Bag<AnyObserver<Element>>()
+    fileprivate var _observers = Bag<(Event<Element>) -> ()>()
     
     typealias DisposeKey = Bag<AnyObserver<Element>>.KeyType
     
@@ -86,16 +88,17 @@ class ReplayBufferBase<Element>
         abstractMethod()
     }
     
-    func replayBuffer(_ observer: AnyObserver<Element>) {
+    func replayBuffer<O: ObserverType>(_ observer: O) where O.E == Element {
         abstractMethod()
     }
     
     override func on(_ event: Event<Element>) {
-        _synchronized_on(event).on(event)
+        lock(_lock)
+        dispatch(_synchronized_on(event), event)
+        unlock(_lock)
     }
 
-    func _synchronized_on(_ event: Event<E>) -> Bag<AnyObserver<Element>> {
-        _lock.lock(); defer { _lock.unlock() }
+    func _synchronized_on(_ event: Event<E>) -> Bag<(Event<Element>) -> ()> {
         if _isDisposed {
             return Bag()
         }
@@ -119,8 +122,10 @@ class ReplayBufferBase<Element>
     }
     
     override func subscribe<O : ObserverType>(_ observer: O) -> Disposable where O.E == Element {
-        _lock.lock(); defer { _lock.unlock() }
-        return _synchronized_subscribe(observer)
+        lock(_lock)
+        let subscription = _synchronized_subscribe(observer)
+        unlock(_lock)
+        return subscription
     }
 
     func _synchronized_subscribe<O : ObserverType>(_ observer: O) -> Disposable where O.E == E {
@@ -137,14 +142,15 @@ class ReplayBufferBase<Element>
             return Disposables.create()
         }
         else {
-            let key = _observers.insert(AnyObserver)
+            let key = _observers.insert(observer.on)
             return SubscriptionDisposable(owner: self, key: key)
         }
     }
 
     func synchronizedUnsubscribe(_ disposeKey: DisposeKey) {
-        _lock.lock(); defer { _lock.unlock() }
+        lock(_lock)
         _synchronized_unsubscribe(disposeKey)
+        unlock(_lock)
     }
 
     func _synchronized_unsubscribe(_ disposeKey: DisposeKey) {
@@ -162,8 +168,9 @@ class ReplayBufferBase<Element>
     }
 
     func synchronizedDispose() {
-        _lock.lock(); defer { _lock.unlock() }
+        lock(_lock)
         _synchronized_dispose()
+        unlock(_lock)
     }
 
     func _synchronized_dispose() {
@@ -187,8 +194,8 @@ final class ReplayOne<Element> : ReplayBufferBase<Element> {
     override func addValueToBuffer(_ value: Element) {
         _value = value
     }
-    
-    override func replayBuffer(_ observer: AnyObserver<Element>) {
+
+    override func replayBuffer<O: ObserverType>(_ observer: O) where O.E == Element {
         if let value = _value {
             observer.on(.next(value))
         }
@@ -210,8 +217,8 @@ class ReplayManyBase<Element> : ReplayBufferBase<Element> {
     override func addValueToBuffer(_ value: Element) {
         _queue.enqueue(value)
     }
-    
-    override func replayBuffer(_ observer: AnyObserver<E>) {
+
+    override func replayBuffer<O: ObserverType>(_ observer: O) where O.E == Element {
         for item in _queue {
             observer.on(.next(item))
         }

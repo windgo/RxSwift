@@ -26,8 +26,9 @@ compareTwoImplementations(benchmarkTime: true, benchmarkMemory: false, first: {
 
     //let a = Observable.just(1)
 
+    var i = 0
     //combineLatest(a,
-        _ = publishSubject //.asDriver(onErrorJustReturn: -1)
+        _ = publishSubject.asDriver(onErrorJustReturn: 0) //.asDriver(onErrorJustReturn: -1)
     /*create { (o: AnyObserver<Int>) in
             for i in 0..<100 {
                 o.on(.next(i))
@@ -35,14 +36,22 @@ compareTwoImplementations(benchmarkTime: true, benchmarkMemory: false, first: {
             return Disposables.create()
         }*/
         //.retryWhen { $0 }
-        .shareReplay(1)
-        .shareReplay(1)
-        .shareReplay(1)
-        .shareReplay(1)
-        .shareReplay(1)
-        .shareReplay(1)
-        .shareReplay(1)
-        .shareReplay(1)
+            .map { $0 }
+            .map { $0 }
+            .map { $0 }
+            .map { $0 }
+            .map { $0 }
+            .map { $0 }
+            .map { $0 }
+            .map { $0 }
+            /*.map { $0 }.filter { _ in true }
+            .map { $0 }.filter { _ in true }
+            .map { $0 }.filter { _ in true }
+            .map { $0 }.filter { _ in true }
+            .map { $0 }.filter { _ in true }
+            .map { $0 }.filter { _ in true }
+            .map { $0 }.filter { _ in true }
+            .map { $0 }.filter { _ in true }*/
         //.map { $0 }
         /*.map { $0 }
         .map { $0 }
@@ -51,8 +60,9 @@ compareTwoImplementations(benchmarkTime: true, benchmarkMemory: false, first: {
         /*.filter { _ in true }//){ x, _ in x }
         .map { $0 }
         .flatMap { Observable.just($0) }*/
-        .subscribe(onNext: { _ in
-
+        .drive(onNext: { x in
+        //.subscribe(onNext: { (x: Int) in
+            i += x
         })
 
 

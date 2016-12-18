@@ -18,21 +18,23 @@ final class ShareReplay1<Element>
 
     private let _source: Observable<Element>
 
-    private var _lock = NSRecursiveLock()
+    private var _lock = createLock()
 
     private var _connection: SingleAssignmentDisposable?
     private var _element: Element?
     private var _stopped = false
     private var _stopEvent = nil as Event<Element>?
-    private var _observers = Bag<AnyObserver<Element>>()
+    private var _observers = Bag<(Event<Element>) -> ()>()
 
     init(source: Observable<Element>) {
         self._source = source
     }
 
     override func subscribe<O : ObserverType>(_ observer: O) -> Disposable where O.E == E {
-        _lock.lock(); defer { _lock.unlock() }
-        return _synchronized_subscribe(observer)
+        lock(_lock)
+        let result = _synchronized_subscribe(observer)
+        unlock(_lock)
+        return result
     }
 
     func _synchronized_subscribe<O : ObserverType>(_ observer: O) -> Disposable where O.E == E {
@@ -47,7 +49,7 @@ final class ShareReplay1<Element>
 
         let initialCount = self._observers.count
 
-        let disposeKey = self._observers.insert(AnyObserver(observer))
+        let disposeKey = self._observers.insert(observer.on)
 
         if initialCount == 0 {
             let connection = SingleAssignmentDisposable()
@@ -60,8 +62,9 @@ final class ShareReplay1<Element>
     }
 
     func synchronizedUnsubscribe(_ disposeKey: DisposeKey) {
-        _lock.lock(); defer { _lock.unlock() }
+        lock(_lock)
         _synchronized_unsubscribe(disposeKey)
+        unlock(_lock)
     }
 
     func _synchronized_unsubscribe(_ disposeKey: DisposeKey) {
@@ -77,11 +80,12 @@ final class ShareReplay1<Element>
     }
 
     func on(_ event: Event<E>) {
-        _synchronized_on(event).on(event)
+        lock(_lock)
+        dispatch(_synchronized_on(event), event)
+        unlock(_lock)
     }
 
-    func _synchronized_on(_ event: Event<E>) -> Bag<AnyObserver<Element>> {
-        _lock.lock(); defer { _lock.unlock() }
+    func _synchronized_on(_ event: Event<E>) -> Bag<(Event<Element>) -> ()> {
         if _stopped {
             return Bag()
         }
@@ -97,5 +101,9 @@ final class ShareReplay1<Element>
         }
 
         return _observers
+    }
+
+    deinit {
+        releaseLock(_lock)
     }
 }

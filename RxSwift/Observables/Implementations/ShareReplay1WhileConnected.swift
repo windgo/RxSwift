@@ -14,33 +14,36 @@ final class ShareReplay1WhileConnected<Element>
     , ObserverType
     , SynchronizedUnsubscribeType {
 
-    typealias DisposeKey = Bag<AnyObserver<Element>>.KeyType
+    typealias DisposeKey = Bag<(Event<Element>) -> ()>.KeyType
 
     private let _source: Observable<Element>
 
-    private var _lock = NSRecursiveLock()
+    private var _lock = createLock()
 
     private var _connection: SingleAssignmentDisposable?
     private var _element: Element?
-    private var _observers = Bag<AnyObserver<Element>>()
+    private var _observers = Bag<(Event<Element>) -> ()>()
 
     init(source: Observable<Element>) {
         self._source = source
     }
 
     override func subscribe<O : ObserverType>(_ observer: O) -> Disposable where O.E == E {
-        _lock.lock(); defer { _lock.unlock() }
-        return _synchronized_subscribe(observer)
+        lock(_lock)
+        let value = _synchronized_subscribe(observer)
+        unlock(_lock)
+        return value
     }
 
-    func _synchronized_subscribe<O : ObserverType>(_ observer: O) -> Disposable where O.E == E {
+    @inline(__always)
+    private func _synchronized_subscribe<O : ObserverType>(_ observer: O) -> Disposable where O.E == E {
         if let element = self._element {
             observer.on(.next(element))
         }
 
         let initialCount = self._observers.count
 
-        let disposeKey = self._observers.insert(AnyObserver(observer))
+        let disposeKey = self._observers.insert(observer.on)
 
         if initialCount == 0 {
             let connection = SingleAssignmentDisposable()
@@ -53,11 +56,13 @@ final class ShareReplay1WhileConnected<Element>
     }
 
     func synchronizedUnsubscribe(_ disposeKey: DisposeKey) {
-        _lock.lock(); defer { _lock.unlock() }
+        lock(_lock)
         _synchronized_unsubscribe(disposeKey)
+        unlock(_lock)
     }
 
-    func _synchronized_unsubscribe(_ disposeKey: DisposeKey) {
+    @inline(__always)
+    private func _synchronized_unsubscribe(_ disposeKey: DisposeKey) {
         // if already unsubscribed, just return
         if self._observers.removeKey(disposeKey) == nil {
             return
@@ -71,22 +76,25 @@ final class ShareReplay1WhileConnected<Element>
     }
 
     func on(_ event: Event<E>) {
-        _synchronized_on(event).on(event)
-    }
+        lock(_lock)
 
-    func _synchronized_on(_ event: Event<E>) -> Bag<AnyObserver<Element>> {
-        _lock.lock(); defer { _lock.unlock() }
         switch event {
         case .next(let element):
             _element = element
-            return _observers
+            dispatch(_observers, event)
         case .error, .completed:
             _element = nil
             _connection?.dispose()
             _connection = nil
             let observers = _observers
             _observers = Bag()
-            return observers
+            dispatch(observers, event)
         }
+        
+        unlock(_lock)
+    }
+
+    deinit {
+        releaseLock(_lock)
     }
 }
