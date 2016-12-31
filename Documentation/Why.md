@@ -305,11 +305,14 @@ In short, using Rx will make your code:
 * 简化状态
 * Without leaks <- Because resource management is easy
 * 没有内存泄漏
-### It's not all or nothing
 
+### It's not all or nothing
+### 不必全用或者放弃
 It is usually a good idea to model as much of your application as possible using Rx.
+通常来说, 使用越多Rx越好.
 
 But what if you don't know all of the operators and whether or not there even exists some operator that models your particular case?
+但是如果你不知道全部操作, 甚至不知道是否有你想要的操作符, 那该怎么办?
 
 Well, all of the Rx operators are based on math and should be intuitive.
 
