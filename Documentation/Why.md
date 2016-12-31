@@ -170,8 +170,9 @@ searchTextField.rx.text
 
 There are no additional flags or fields required. Rx takes care of all that transient mess.
 
-### Compositional disposal
 
+### Compositional disposal
+### 组合处理
 Let's assume that there is a scenario where you want to display blurred images in a table view. First, the images should be fetched from a URL, then decoded and then blurred.
 
 It would also be nice if that entire process could be cancelled if a cell exits the visible table view area since bandwidth and processor time for blurring are expensive.
@@ -291,13 +292,19 @@ extension NSURLSession {
 In short, using Rx will make your code:
 
 * Composable <- Because Rx is composition's nickname
+* 可组合
 * Reusable <- Because it's composable
+* 可重用
 * Declarative <- Because definitions are immutable and only data changes
+* 声明式
 * Understandable and concise <- Raising the level of abstraction and removing transient states
+* 易理解, 简洁
 * Stable <- Because Rx code is thoroughly unit tested
+* 稳定
 * Less stateful <- Because you are modeling applications as unidirectional data flows
+* 简化状态
 * Without leaks <- Because resource management is easy
-
+* 没有内存泄漏
 ### It's not all or nothing
 
 It is usually a good idea to model as much of your application as possible using Rx.
