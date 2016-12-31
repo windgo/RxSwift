@@ -1,9 +1,9 @@
 ## Why
 
 **Rx enables building apps in a declarative way.**
-
+**Rx提供了"声明式"构建apps的能力.**
 ### Bindings
-
+### 绑定
 ```swift
 Observable.combineLatest(firstName.rx.text, lastName.rx.text) { $0 + " " + $1 }
     .map { "Greetings, \($0)" }
