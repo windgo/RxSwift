@@ -315,13 +315,17 @@ But what if you don't know all of the operators and whether or not there even ex
 但是如果你不知道全部操作, 甚至不知道是否有你想要的操作符, 那该怎么办?
 
 Well, all of the Rx operators are based on math and should be intuitive.
+所有的数学运算符, 都是基于数学, 符合直觉的.
 
 The good news is that about 10-15 operators cover most typical use cases. And that list already includes some of the familiar ones like `map`, `filter`, `zip`, `observeOn`, ...
-
+Rx有10-15个操作符, 可以覆盖大多数典型的应用场景. 这些包括大家最常用, 最熟悉的, 比如`map`,`filter`,`zip`,`observerOn`
 There is a huge list of [all Rx operators](http://reactivex.io/documentation/operators.html).
+大列表在这里:[全部Rx操作符](http://reactivex.io/documentation/operators.html).
 
 For each operator, there is a [marble diagram](http://reactivex.io/documentation/operators/retry.html) that helps to explain how it works.
-
+对于每个操作符, 有一个图表帮助解释它是如何工作的.
 But what if you need some operator that isn't on that list? Well, you can make your own operator.
+如果你想要的操作符在这个大列表里面没有该怎么办? 自己做一个.
 
 What if creating that kind of operator is really hard for some reason, or you have some legacy stateful piece of code that you need to work with? Well, you've got yourself in a mess, but you can [jump out of Rx monads](GettingStarted.md#life-happens) easily, process the data, and return back into it.
+
