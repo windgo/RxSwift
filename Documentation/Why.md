@@ -6,6 +6,7 @@
 ### 绑定
 > 下面的代码, 将输入姓名的两个输入框的文本, 连接起来, 再加上问候语, 在一个label中进行了输出.
 > UITextFied, UILabel可以使用. 控件.rx.属性的模式来使用
+
 ```swift
 Observable.combineLatest(firstName.rx.text, lastName.rx.text) { $0 + " " + $1 }
     .map { "Greetings, \($0)" }
@@ -14,6 +15,7 @@ Observable.combineLatest(firstName.rx.text, lastName.rx.text) { $0 + " " + $1 }
 
 This also works with `UITableView`s and `UICollectionView`s.
 对于UITableView, UICollectionView也是适用适用的. 下面的代码, 将viewModel中的数据, 直接绑定到了tableview中去. 可以看到,代码相当简洁. 如果使用传统的datasource方式, 可能就不是这区区几行代码送实现的.
+
 ```swift
 viewModel
     .rows
@@ -29,17 +31,23 @@ viewModel
 ### Retries
 ### 重试
 It would be great if APIs wouldn't fail, but unfortunately they do. Let's say there is an API method:
+
 如果API调用不失败那皆大欢喜, 不幸总是会失败. 比如:
 ```swift
 func doSomethingIncredible(forWho: String) throws -> IncredibleThing
 ```
 
 If you are using this function as it is, it's really hard to do retries in case it fails. Not to mention complexities modeling [exponential backoffs](https://en.wikipedia.org/wiki/Exponential_backoff). Sure it's possible, but the code would probably contain a lot of transient states that you really don't care about, and it wouldn't be reusable.
+
 如果你正在使用上面这样的函数, 失败重试是很难做到的.这还没说复杂的模型. 重试肯定是能做到的, 但是代码里会出现很多你不真正关心的事务状态管理代码. 并且这些代码是不可重用的.
 
 Ideally, you would want to capture the essence of retrying, and to be able to apply it to any operation.
+
 比较理想的是, 你期望"抓住"重试的本质, 提取出公用的代码, 可以在任何操作中使用.
+
 This is how you can do simple retries with Rx
+
+在Rx中, 你可以这样做:
 
 ```swift
 doSomethingIncredible("me")
@@ -48,9 +56,13 @@ doSomethingIncredible("me")
 
 You can also easily create custom retry operators.
 
-### Delegates
+你也可以很容易的创建自定义重试操作符.
 
+### Delegates
+### 委托
 Instead of doing the tedious and non-expressive:
+
+Rx可以替代单调乏味的delegates
 
 ```swift
 public func scrollViewDidScroll(scrollView: UIScrollView) { [weak self] // what scroll view is this bound to?
@@ -74,6 +86,7 @@ Instead of:
 ```
 `TickTock` was deallocated while key value observers were still registered with it. Observation info was leaked, and may even become mistakenly attached to some other object.
 ```
+传统的KVO容易内存泄漏, 也容易关联到错误的对象上.
 
 and
 
@@ -87,7 +100,7 @@ and
 Use [`rx.observe` and `rx.observeWeakly`](GettingStarted.md#kvo)
 
 This is how they can be used:
-
+在Rx中可以这样做:
 ```swift
 view.rx.observe(CGRect.self, "frame")
     .subscribe(onNext: { frame in
@@ -108,7 +121,7 @@ someSuspiciousViewController
 ```
 
 ### Notifications
-
+### 通知
 Instead of using:
 
 ```swift
